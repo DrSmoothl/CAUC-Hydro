@@ -136,7 +136,10 @@ function buildCategoryFilter() {
   });
 }
 
-export default new NamedPage(['problem_create', 'problem_edit'], () => {
+// 此文件已被 problem_edit_react.page.tsx 替代
+// 保留此文件仅作备份参考
+// export default new NamedPage(['problem_create', 'problem_edit'], () => {
+export default new NamedPage(['problem_create_legacy', 'problem_edit_legacy'], () => {
   let confirmed = false;
   $(document).on('click', '[name="operation"]', (ev) => {
     ev.preventDefault();

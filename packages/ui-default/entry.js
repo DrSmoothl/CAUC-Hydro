@@ -1,4 +1,5 @@
 import './polyfill';
+import './theme/tailwind.css';
 
 import $ from 'jquery';
 

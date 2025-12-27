@@ -81,6 +81,14 @@ class SystemConfigSchemaHandler extends Handler {
   }
 }
 
+class ShadcnDemoHandler extends Handler {
+  noCheckPermView = true;
+
+  async get() {
+    this.response.template = 'shadcn_demo.html';
+  }
+}
+
 class RichMediaHandler extends Handler {
   async renderUser(domainId, payload) {
     let d = payload.domainId || domainId;
@@ -198,6 +206,7 @@ export function apply(ctx: Context, config: ReturnType<typeof Config>) {
   if (process.env.HYDRO_CLI) return;
   ctx.Route('wiki_help', '/wiki/help', WikiHelpHandler);
   ctx.Route('wiki_about', '/wiki/about', WikiAboutHandler);
+  ctx.Route('shadcn_demo', '/shadcn-demo', ShadcnDemoHandler);
   ctx.Route('set_theme', '/set_theme/:theme', SetThemeHandler);
   ctx.Route('set_legacy', '/legacy', LegacyModeHandler);
   ctx.Route('markdown', '/markdown', MarkdownHandler);

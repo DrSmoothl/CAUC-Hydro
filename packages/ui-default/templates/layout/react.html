@@ -1,0 +1,105 @@
+{% set layout_name = "react" %}
+{% extends "layout/html5.html" %}
+{% block body %}
+{# 注入布局需要的上下文数据 #}
+{{ set(UiContext, 'layoutUser', handler.user._id and {
+  _id: handler.user._id,
+  uname: handler.user.uname,
+  avatar: avatarUrl(handler.user.avatar, 64),
+  mail: handler.user.mail
+} or null) }}
+{{ set(UiContext, 'layoutDomain', {
+  _id: handler.domain._id,
+  name: handler.domain.name,
+  avatar: handler.domain.avatar
+}) }}
+{{ set(UiContext, 'layoutUserDomains', handler.user.domains or []) }}
+{{ set(UiContext, 'layoutCurrentPath', handler.request.path) }}
+{{ set(UiContext, 'layoutVersion', VersionNumber) }}
+{{ set(UiContext, 'layoutTheme', handler.session.theme or 'light') }}
+{{ set(UiContext, 'layoutLanguage', handler.user.viewLang or 'zh') }}
+{{ set(UiContext, 'layoutLanguages', model.system.get('server.language').split(',').map(eval("l => ({code: l.trim(), name: l.trim()})")) or [] ) }}
+
+{# 导航项配置 #}
+{{ set(UiContext, 'layoutNavItems', []) }}
+{% for item in nav %}
+  {% set _void = UiContext.layoutNavItems.push({
+    name: item.name,
+    label: _(item.displayName),
+    href: item.prefix ? '/' + item.prefix : '/' + item.name,
+    iconName: item.name
+  }) %}
+{% endfor %}
+
+{# 面包屑 #}
+{{ set(UiContext, 'layoutBreadcrumbs', []) }}
+{% for item in path %}
+  {% set _void = UiContext.layoutBreadcrumbs.push({
+    label: _(item.displayName),
+    href: item.url
+  }) %}
+{% endfor %}
+
+{# 底栏分类 #}
+{{ set(UiContext, 'layoutFooterCategories', [
+  {
+    title: '状态',
+    links: [
+      { label: '评测队列', href: '/judge/queue' },
+      { label: '系统状态', href: '/status' },
+      { label: '更新日志', href: '/wiki/changelog' }
+    ]
+  },
+  {
+    title: '开发',
+    links: [
+      { label: 'GitHub', href: 'https://github.com/hydro-dev/Hydro', external: true },
+      { label: '开发文档', href: 'https://hydro.js.org/', external: true },
+      { label: 'API 文档', href: '/wiki/api' }
+    ]
+  },
+  {
+    title: '支持',
+    links: [
+      { label: '帮助中心', href: '/wiki/help' },
+      { label: '问题反馈', href: 'https://github.com/hydro-dev/Hydro/issues', external: true }
+    ]
+  },
+  {
+    title: '关于',
+    links: [
+      { label: '关于我们', href: '/wiki/about' },
+      { label: '使用条款', href: '/wiki/tos' },
+      { label: '隐私政策', href: '/wiki/privacy' }
+    ]
+  }
+]) }}
+
+{# 全局通知 #}
+{% for item in ui.getNodes('Notification').concat(notification or []) %}
+  {% if item.checker(handler) %}
+    {{ set(UiContext, 'layoutNotification', {
+      type: item.args.type,
+      message: _(item.name).format(item.args.args or [])
+    }) }}
+  {% endif %}
+{% endfor %}
+
+{# React 布局挂载点 #}
+<div id="app-layout-root">
+  {# 加载中占位 #}
+  <div style="display:flex;min-height:100vh;align-items:center;justify-content:center;">
+    <div style="text-align:center;">
+      <div style="width:40px;height:40px;border:3px solid #e5e7eb;border-top-color:#3b82f6;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto;"></div>
+      <p style="margin-top:16px;color:#6b7280;">加载中...</p>
+    </div>
+  </div>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg);}}</style>
+
+{# 页面内容将由 React 渲染，这里注入给 React #}
+{{ set(UiContext, 'layoutPageContent', null) }}
+{% block content %}{% endblock %}
+
+{% if UserContext and not handler.user._id %}{% include "partials/login_dialog.html" %}{% endif %}
+{% endblock %}

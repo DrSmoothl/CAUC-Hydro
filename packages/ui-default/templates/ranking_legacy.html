@@ -1,0 +1,36 @@
+{% extends "layout/basic.html" %}
+{% import "components/paginator.html" as paginator with context %}
+{% import "components/nothing.html" as nothing with context %}
+{% block content %}
+{{ set(UiContext, 'udocs', udocs.map(eval("u => ({...u, avatarUrl: '" + model.system.get('server.url') + "/avatar/' + (u.avatar || u.mail || '')})"))) }}
+{{ set(UiContext, 'page', page) }}
+{{ set(UiContext, 'upcount', upcount) }}
+{{ set(UiContext, 'pageSize', model.system.get('pagination.ranking')) }}
+{% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+{{ set(UiContext, 'currentUser', {
+  _id: handler.user._id,
+  uname: handler.user.uname,
+  avatarUrl: avatarUrl(handler.user.avatar, 64),
+  rp: handler.user.rp,
+  rpInfo: handler.user.rpInfo,
+  nAccept: handler.user.nAccept,
+  bio: handler.user.bio,
+  rank: handler.user.rank
+}) }}
+{% endif %}
+{{ set(UiContext, 'rpColumns', []) }}
+{% for key, def in model.rp %}
+  {% if not def.hidden %}
+    {% set _void = UiContext.rpColumns.push({ key: key, hidden: false }) %}
+  {% endif %}
+{% endfor %}
+<div class="row">
+  <div class="medium-12 columns">
+    <div class="section">
+      <div class="section__body no-padding">
+        <div id="ranking-root"></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

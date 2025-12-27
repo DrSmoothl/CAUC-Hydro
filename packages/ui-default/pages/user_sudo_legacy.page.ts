@@ -19,7 +19,7 @@ function sudoSwitch(type, init = false) {
   $('.sudo-div:visible input:visible').first().trigger('focus');
 }
 
-export default new NamedPage('user_sudo', () => {
+export default new NamedPage('user_sudo_legacy', () => {
   sudoSwitch($($('.sudo-div')[0]).data('sudo'), true);
   $('.sudo-switch').on('click', (ev) => sudoSwitch($(ev.currentTarget).data('sudo')));
 });

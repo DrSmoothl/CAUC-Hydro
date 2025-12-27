@@ -1,81 +1,43 @@
-{% extends "layout/basic.html" %}
-{% import "components/paginator.html" as paginator with context %}
-{% import "components/nothing.html" as nothing with context %}
-{% block content %}
-<div class="row">
-  <div class="medium-12 columns">
-    <div class="section">
-      <div class="section__body no-padding">
-        <div data-fragment-id="ranking">
-          {% if not udocs.length %}
-            {% if page == 1 %}
-              <blockquote class="note">{{ _('The ranking page is not updated realtime.') }}</blockquote>
-            {% endif %}
-          {{ nothing.render('Sorry, there are no users in this domain.') }}
-          {% else %}
-          <table class="data-table">
-            <colgroup>
-              <col class="col--rank">
-              <col class="col--user">
-              <col class="col--rp">
-              {% for key, def in model.rp %}
-                {% if not def.hidden %}
-                  <col class="col--detail rp-{{ key }}">
-                {% endif %}
-              {% endfor %}
-              <col class="col--ac">
-              <col class="col--bio">
-            </colgroup>
-            <thead>
-              <tr>
-                <th class="col--rank">{{ _('Rank') }}</th>
-                <th class="col--user">{{ _('Username') }}</th>
-                <th class="col--rp">{{ _('RP') }}</th>
-                {% for key, def in model.rp %}
-                  {% if not def.hidden %}
-                    <th class="col--detail rp-{{ key }}">{{ _('rpDetailText_' + key) }}</th>
-                  {% endif %}
-                {% endfor %}
-                <th class="col--ac">{{ _('Accept') }}</th>
-                <th class="col--bio">{{ _('Bio') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
-              <tr>
-                <td class="col--rank">{{ handler.user.rank|default('-') }}</td>
-                <td class="col--user">{{ user.render_inline(handler.user) }}</td>
-                <td class="col--rp">{{ handler.user.rp|default(0)|round(0) }}</td>
-                {% for key, def in model.rp %}
-                  {% if not def.hidden %}
-                    <td class="col--detail rp-{{ key }}">{{ handler.user.rpInfo[key]|round if (handler.user.rpInfo|default({}))[key] else '-' }}</td>
-                  {% endif %}
-                {% endfor %}
-                <td class="col--ac">{{ handler.user.nAccept|default(0) }}</td>
-                <td class="col--bio">{{ handler.user.bio|default('')|truncate(64, true)|markdownInline|safe }}</td>
-              </tr>
-              {% endif %}
-              {%- for udoc in udocs -%}
-              <tr>
-                <td class="col--rank">{{ (page - 1) * model.system.get('pagination.ranking') + loop.index }}</td>
-                <td class="col--user">{{ user.render_inline(udoc) }}</td>
-                <td class="col--rp">{{ udoc.rp|default(0)|round(0) }}</td>
-                {% for key, def in model.rp %}
-                  {% if not def.hidden %}
-                    <td class="col--detail rp-{{ key }}">{{ udoc.rpInfo[key]|round if udoc.rpInfo[key] else '-' }}</td>
-                  {% endif %}
-                {% endfor %}
-                <td class="col--ac">{{ udoc.nAccept|default(0) }}</td>
-                <td class="col--bio">{{ udoc.bio|default('')|truncate(64, true)|markdownInline|safe }}</td>
-              </tr>
-              {%- endfor -%}
-            </tbody>
-          </table>
-          {{ paginator.render(page, upcount) }}
-          {% endif %}
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+{% set page_name = "ranking" %}
+{% extends "layout/html5.html" %}
+{% block body %}
+{# 注入布局数据到 UiContext #}
+{{ set(UiContext, 'layoutUser', handler.user._id and {
+  _id: handler.user._id,
+  uname: handler.user.uname,
+  avatar: avatarUrl(handler.user.avatar, 64)
+} or null) }}
+{{ set(UiContext, 'layoutDomain', {
+  _id: handler.domain._id,
+  name: handler.domain.name,
+  avatar: handler.domain.avatar
+}) }}
+{{ set(UiContext, 'layoutVersion', VersionNumber) }}
+
+{# 注入排名数据到 UiContext #}
+{{ set(UiContext, 'udocs', udocs.map(eval("u => ({...u, avatarUrl: '" + model.system.get('server.url') + "/avatar/' + (u.avatar || u.mail || '')})"))) }}
+{{ set(UiContext, 'page', page) }}
+{{ set(UiContext, 'upcount', upcount) }}
+{{ set(UiContext, 'pageSize', model.system.get('pagination.ranking')) }}
+{% if handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+{{ set(UiContext, 'currentUser', {
+  _id: handler.user._id,
+  uname: handler.user.uname,
+  avatarUrl: avatarUrl(handler.user.avatar, 64),
+  rp: handler.user.rp,
+  rpInfo: handler.user.rpInfo,
+  nAccept: handler.user.nAccept,
+  bio: handler.user.bio,
+  rank: handler.user.rank
+}) }}
+{% endif %}
+{{ set(UiContext, 'rpColumns', []) }}
+{% for key, def in model.rp %}
+  {% if not def.hidden %}
+    {% set _void = UiContext.rpColumns.push({ key: key, hidden: false }) %}
+  {% endif %}
+{% endfor %}
+
+{# React 挂载点 #}
+<div id="ranking-root"></div>
 {% endblock %}

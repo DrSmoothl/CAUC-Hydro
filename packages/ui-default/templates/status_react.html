@@ -1,0 +1,26 @@
+{% set page_name = "status_react" %}
+{% extends "layout/html5.html" %}
+{% block body %}
+{# 注入用户和域信息 #}
+{{ set(UiContext, 'layoutUser', handler.user._id and {
+  _id: handler.user._id,
+  uname: handler.user.uname,
+  avatar: avatarUrl(handler.user.avatar, 64)
+} or null) }}
+{{ set(UiContext, 'layoutDomain', {
+  _id: handler.domain._id,
+  name: handler.domain.name,
+  avatar: handler.domain.avatar
+}) }}
+{{ set(UiContext, 'layoutVersion', VersionNumber) }}
+
+{# 注入状态数据 #}
+{{ set(UiContext, 'stats', stats) }}
+{{ set(UiContext, 'compilers', compilers or []) }}
+{{ set(UiContext, 'langs', langs or {}) }}
+
+{# React 布局挂载点 #}
+<div id="status-layout-root"></div>
+
+{% if UserContext and not handler.user._id %}{% include "partials/login_dialog.html" %}{% endif %}
+{% endblock %}
